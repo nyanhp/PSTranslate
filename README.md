@@ -1,4 +1,4 @@
-# PSTranslate
+﻿# PSTranslate
 
 A little module to get translations from cloud service like the Azure Cognitive Services.
 

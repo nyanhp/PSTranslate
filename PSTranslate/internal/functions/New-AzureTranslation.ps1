@@ -1,4 +1,4 @@
-function New-AzureTranslation
+﻿function New-AzureTranslation
 {
     [CmdletBinding()]
     param

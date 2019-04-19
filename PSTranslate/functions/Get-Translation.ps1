@@ -1,4 +1,4 @@
-function Get-Translation
+﻿function Get-Translation
 {
     param
     (

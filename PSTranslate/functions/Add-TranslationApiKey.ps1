@@ -1,4 +1,4 @@
-function Add-TranslationApiKey
+﻿function Add-TranslationApiKey
 {
     [CmdletBinding()]
     param
