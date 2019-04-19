@@ -1,7 +1,7 @@
 $modulePath = Resolve-Path -Path "$PSScriptRoot\..\..\PSTranslate.psd1" -ErrorAction Stop
 
 Remove-Module PSTranslate -Force
-Import-Module -Name $modulePath.Path -Force
+Import-Module -Name $modulePath.Path, PSFramework -Force
 
 InModuleScope -ModuleName PSTranslate {
     Describe 'Testing Get-Translation' {
