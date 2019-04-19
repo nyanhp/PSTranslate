@@ -1,4 +1,2 @@
-﻿<#
-# Example:
-Register-PSFTeppArgumentCompleter -Command Get-Alcohol -Parameter Type -Name PSTranslate.alcohol
-#>
+﻿Register-PSFTeppArgumentCompleter -Command Get-TranslationApiKey -Parameter Provider -Name PSTranslate.Provider
+Register-PSFTeppArgumentCompleter -Command Add-TranslationApiKey -Parameter Provider -Name PSTranslate.Provider

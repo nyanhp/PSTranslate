@@ -1,11 +1,33 @@
 ﻿function Get-Translation
 {
+<#
+	.SYNOPSIS
+		Translates text from one language to another.
+	
+	.DESCRIPTION
+		Translates text from one language to another.
+	
+	.PARAMETER Value
+		The text to translate.
+	
+	.PARAMETER From
+		THe language to translate the text from.
+	
+	.PARAMETER To
+		The language to translate the text to.
+	
+	.PARAMETER Provider
+		The translation service to use.
+	
+	.EXAMPLE
+		PS C:\> Get-Content .\essay.md | Get-Translation -From en -To de
+	
+		Translates the content of essay.md from English to German.
+#>
+	[CmdletBinding()]
     param
     (
-        [Parameter(
-            Mandatory = $true,
-            ValueFromPipeline = $true
-        )]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [String[]]
         $Value,
 
@@ -19,7 +41,7 @@
 
         [Parameter()]
         [string]
-        $Provider = 'Azure'
+        $Provider = (Get-PSFConfigValue -FullName 'PSTranslate.DefaultProvider')
     )
 
     begin
@@ -44,7 +66,7 @@
         switch ($Provider)
         {
             'Azure' { $pipeCollection | New-AzureTranslation -From $From -To $To }
-            default { Write-Warning -Message "No implementation found for provider $Provider. Available: $($(Get-ChildItem -Path "$PSScriptRoot\..\private" -File).Foreach({[regex]::Match($_.BaseName, 'New-(\w+)Translation').Groups[1].Value}) -join ',')"}
-        }
-    }
+			default { Write-PSFMessage -Level Warning -String 'Get-Translation.BadProvider' -StringValues $Provider }
+		}
+	}
 }
