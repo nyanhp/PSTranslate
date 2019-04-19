@@ -58,14 +58,9 @@ InModuleScope -ModuleName PSTranslate {
 
         Context 'Unkown provider' {
             $testData.Provider = 'ComputerSayNooooo'
-            Mock -CommandName Write-PSFMessage
 
-            It 'Should return $null' {
-                Get-Translation @testData -WarningAction SilentlyContinue | Should -Be $null
-            }
-
-            It 'Should call Write-PSFMessage' {
-                Assert-MockCalled -CommandName Write-PSFMessage -Exactly -Times 1
+            It 'should throw' {
+                {Get-Translation @testData} | Should -Throw
             }
         }
     }
