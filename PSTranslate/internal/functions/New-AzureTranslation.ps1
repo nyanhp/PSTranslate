@@ -1,11 +1,33 @@
 ﻿function New-AzureTranslation
 {
+<#
+	.SYNOPSIS
+		Uses Azure Cognitive Services to translate text.
+	
+	.DESCRIPTION
+		Uses Azure Cognitive Services to translate text.
+	
+	.PARAMETER Value
+		The text to translate.
+	
+	.PARAMETER From
+		The language to translate from.
+	
+	.PARAMETER To
+		The language to translate to.
+	
+	.PARAMETER ApiVersion
+		The API version to use.
+	
+	.EXAMPLE
+		PS C:\> $text | New-AzureTranslation -From $From -To $To
+	
+		Converts the text stored in the $text from one language to another
+#>
     [CmdletBinding()]
     param
     (
-        [Parameter(
-            Mandatory = $true,
-            ValueFromPipeline = $true)]
+        [Parameter(Mandatory = $true, ValueFromPipeline = $true)]
         [string]
         $Value,
 
@@ -29,17 +51,17 @@
         $key = Get-TranslationApiKey -Provider Azure
 
         if (-not $key)
-        {
-            Write-Error -Message 'No valid API key found. Try adding one with Add-TranslationApiKey -Provider Azure. See https://docs.microsoft.com/en-us/azure/cognitive-services/translator/translator-info-overview for more information.' -RecommendedAction 'Add API key'
+		{
+			Stop-PSFFunction -String 'New-AzureTranslation.ApiKey.NotFound'
             return
         }
 
         $header = @{
             'Ocp-Apim-Subscription-Key' = $key
         }
-
-        Write-Verbose -Message $('Using endpoint {0} with API key {1}' -f $azureUri, $($( -join $key[0, 1]) + $('*' * 28) + $( -join $key[-2, -1])))
-
+		
+		Write-PSFMessage -String 'New-AzureTranslation.Preparing' -StringValues $From.TwoLetterISOLanguageName, $To.TwoLetterISOLanguageName, $($(-join $key[0, 1]) + $('*' * 28) + $(-join $key[-2, -1])), $azureUri
+        
         $requestCollector = New-Object -TypeName System.Collections.Specialized.OrderedDictionary
         $count = 0
         $requestCollector.Add($count, @())
@@ -52,18 +74,18 @@
             $count ++
             $requestCollector.Add($count, @())
         }
-
-        Write-Verbose -Message "Adding '$Value' to collection ($($requestCollector[$count].Count) elements)"
+		
+		Write-PSFMessage -String 'New-AzureTranslation.AddingInput' -StringValues $Value, $requestCollector[$count].Count
         $requestCollector[$count] += @{ Text = $Value }
     }
 
     end
-    {
-        Write-Verbose -Message "Requesting $($requestCollector.Count) batch(es) of translations"
+	{
+		Write-PSFMessage -String 'New-AzureTranslation.ExecutingBatches' -StringValues $requestCollector.Count
         foreach ($entry in $requestCollector.GetEnumerator())
         {
-            $jsonBody = ConvertTo-Json -InputObject $entry.Value
-            Write-Verbose -Message "Using body `n`n$jsonBody"
+			$jsonBody = ConvertTo-Json -InputObject $entry.Value
+			Write-PSFMessage -Level Debug -String 'New-AzureTranslation.ExecutionBody' -StringValues $jsonBody
             $(Invoke-RestMethod -Method Post -Uri $azureUri -Body $jsonBody -Headers $header -ContentType application/json).translations.text
         }
     }
