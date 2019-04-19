@@ -1,1 +1,22 @@
-/.vscode
+﻿
+# ignore the settings folder and files for VSCode and PSS
+.vscode/*
+*.psproj
+*TempPoint*
+
+# Ignore staging info from Visual Studio
+library/PSTranslate/.vs/*
+library/PSTranslate/PSTranslate/bin/*
+library/PSTranslate/PSTranslate/obj/*
+
+# ignore PowerShell Studio MetaData
+PSTranslate/PSTranslate.psproj
+PSTranslate/PSTranslate.psproj.bak
+PSTranslate/PSTranslate.psprojs
+PSTranslate/PSTranslate.psproj
+
+# ignore the TestResults
+TestResults/*
+
+# ignore the publishing Directory
+publish/*

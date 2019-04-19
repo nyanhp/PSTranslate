@@ -1,4 +1,4 @@
-function Get-TranslationApiKey
+﻿function Get-TranslationApiKey
 {
     param
     (
