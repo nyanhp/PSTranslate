@@ -3,25 +3,25 @@
 <#
 	.SYNOPSIS
 		Translates text from one language to another.
-	
+
 	.DESCRIPTION
 		Translates text from one language to another.
-	
+
 	.PARAMETER Value
 		The text to translate.
-	
+
 	.PARAMETER From
 		THe language to translate the text from.
-	
+
 	.PARAMETER To
 		The language to translate the text to.
-	
+
 	.PARAMETER Provider
 		The translation service to use.
-	
+
 	.EXAMPLE
 		PS C:\> Get-Content .\essay.md | Get-Translation -From en -To de
-	
+
 		Translates the content of essay.md from English to German.
 #>
 	[CmdletBinding()]
@@ -40,6 +40,7 @@
         $To,
 
         [Parameter()]
+		[PsfValidateSet(TabCompletion = 'PSTranslate.Provider')]
         [string]
         $Provider = (Get-PSFConfigValue -FullName 'PSTranslate.DefaultProvider')
     )
