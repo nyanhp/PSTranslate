@@ -1,0 +1,30 @@
+environment:
+  NuGetApiKey:
+    secure: OX4AxdrgR7cWD+b3x/ZcjN87ij7UM1+HYsd/L3CJKxAkJ2ZEX3lIgvWDuoTMcKNM
+
+version: 1.2.{build}
+
+skip_tags: true
+skip_branch_with_pr: true
+
+image: Visual Studio 2017
+
+init:
+  - ps: |
+        .\build\all-prerequisites.ps1
+
+# Skip on updates to the readme.
+# We can force this by adding [skip ci] or [ci skip] anywhere in commit message
+skip_commits:
+  message: /updated readme.*|update readme.*s/
+
+build: false
+
+#Kick off the CI/CD pipeline
+test_script:
+  - ps: |
+        .\build\appveyor-validate.ps1 -ApiKey $env:NuGetApiKey
+
+build_script:
+  - ps: |
+        .\build\appveyor-build.ps1 -ApiKey $env:NuGetApiKey
