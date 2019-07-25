@@ -10,7 +10,7 @@ skip_branch_with_pr: true
 image: Visual Studio 2017
 
 init:
-  - ps: . .\build\all-prerequisites.ps1
+  - ps: & (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'build\all-prerequisites.ps1' -Resolve -ErrorAction Stop)
 
 # Skip on updates to the readme.
 # We can force this by adding [skip ci] or [ci skip] anywhere in commit message
@@ -21,7 +21,7 @@ build: false
 
 #Kick off the CI/CD pipeline
 test_script:
-  - ps:  . .\build\appveyor-validate.ps1
+  - ps:  & (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'build\appveyor-validate.ps1' -Resolve -ErrorAction Stop)
 
 build_script:
-  - ps:  . .\build\appveyor-build.ps1 -ApiKey $env:NuGetApiKey
+  - ps:  & (Join-Path -Path $env:APPVEYOR_BUILD_FOLDER -ChildPath 'build\appveyor-build.ps1' -Resolve -ErrorAction Stop) -ApiKey $env:NuGetApiKey
