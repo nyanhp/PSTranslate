@@ -3,27 +3,28 @@
 <#
 	.SYNOPSIS
 		Uses Azure Cognitive Services to translate text.
-	
+
 	.DESCRIPTION
 		Uses Azure Cognitive Services to translate text.
-	
+
 	.PARAMETER Value
 		The text to translate.
-	
+
 	.PARAMETER From
 		The language to translate from.
-	
+
 	.PARAMETER To
 		The language to translate to.
-	
+
 	.PARAMETER ApiVersion
 		The API version to use.
-	
+
 	.EXAMPLE
 		PS C:\> $text | New-AzureTranslation -From $From -To $To
-	
+
 		Converts the text stored in the $text from one language to another
 #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSUseShouldProcessForStateChangingFunctions", "")]
     [CmdletBinding()]
     param
     (
@@ -59,9 +60,9 @@
         $header = @{
             'Ocp-Apim-Subscription-Key' = $key
         }
-		
+
 		Write-PSFMessage -String 'New-AzureTranslation.Preparing' -StringValues $From.TwoLetterISOLanguageName, $To.TwoLetterISOLanguageName, $($(-join $key[0, 1]) + $('*' * 28) + $(-join $key[-2, -1])), $azureUri
-        
+
         $requestCollector = New-Object -TypeName System.Collections.Specialized.OrderedDictionary
         $count = 0
         $requestCollector.Add($count, @())
@@ -74,7 +75,7 @@
             $count ++
             $requestCollector.Add($count, @())
         }
-		
+
 		Write-PSFMessage -String 'New-AzureTranslation.AddingInput' -StringValues $Value, $requestCollector[$count].Count
         $requestCollector[$count] += @{ Text = $Value }
     }
