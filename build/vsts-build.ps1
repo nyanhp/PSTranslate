@@ -100,7 +100,7 @@ Write-Host "Working in branch $branch"
 if ($branch -eq 'development')
 {
 	Write-Host 'Branch is development, prepping prerelease'
-	$manipar['Prerelease'] = Get-Date -Format yyyyMMddHHmmss
+	$manipar['Prerelease'] = 'pre' -f (Get-Date -Format yyyyMMddHHmmss)
 	$moduleversion = "$moduleversion-$($manipar['Prerelease'] )"
 }
 
