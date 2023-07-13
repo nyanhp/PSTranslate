@@ -88,7 +88,14 @@ $manipar = @{
 	Path         = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
 }
 
-$branch = git branch --show-current 2>$null
+$branch = $env:GITHUB_REF_NAME
+
+if ($branch -notin 'main','development')
+{
+	Write-Host 'You should not be here...'
+	return
+}
+
 Write-Host "Working in branch $branch"
 if ($branch -eq 'development')
 {

@@ -3,7 +3,7 @@
     RootModule      = 'PSTranslate.psm1'
 	
     # Version number of this module.
-    ModuleVersion        = '2.1.1'
+    ModuleVersion        = '2.1.2'
 	
     # ID used to uniquely identify this module
     GUID                 = 'b066a7ac-3ba4-4814-9991-7ccf6cb96234'
