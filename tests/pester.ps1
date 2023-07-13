@@ -47,6 +47,7 @@ if ($TestGeneral)
 
 		Write-Host  "  Executing $($file.Name)"
 		$config.TestResult.OutputPath = Join-Path "$PSScriptRoot\..\TestResults" "TEST-$($file.BaseName).xml"
+		$config.TestResult.Enabled = $true
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output
@@ -81,6 +82,19 @@ if ($TestFunctions)
 		
 		Write-Host "  Executing $($file.Name)"
 		$config.TestResult.OutputPath = Join-Path "$PSScriptRoot\..\TestResults" "TEST-$($file.BaseName).xml"
+		$config.TestResult.Enabled = $true
+		$config.CodeCoverage.Enabled = $true
+		$cocoPath = if (Test-Path "$PSScriptRoot\..\PSTranslate\functions\$($file.BaseName -replace '\.tests').ps1")
+		{
+			"$PSScriptRoot\..\PSTranslate\functions\$($file.BaseName -replace '\.tests').ps1"
+		}
+		else
+		{
+			"$PSScriptRoot\..\PSTranslate\internal\functions\$($file.BaseName -replace '\.tests').ps1"
+		}
+		$config.CodeCoverage.Path = $cocoPath
+		$config.CodeCoverage.CoveragePercentTarget = 80
+		$config.CodeCoverage.OutputPath = Join-Path "$PSScriptRoot\..\TestResults" "COVERAGE-$($file.BaseName).xml"
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output
