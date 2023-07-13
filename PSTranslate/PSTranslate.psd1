@@ -1,6 +1,6 @@
 ﻿@{
     # Script module or binary module file associated with this manifest
-    ModuleToProcess      = 'PSTranslate.psm1'
+    RootModule      = 'PSTranslate.psm1'
 	
     # Version number of this module.
     ModuleVersion        = '2.0.0'

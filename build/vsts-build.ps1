@@ -88,8 +88,11 @@ $manipar = @{
 	Path         = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
 }
 
-if ((git rev-parse --abbrev-ref HEAD) -eq 'development')
+$branch = git rev-parse --abbrev-ref HEAD 2>$null
+Write-Host "Working in branch $branch"
+if ($branch -eq 'development')
 {
+	Write-Host 'Branch is development, prepping prerelease'
 	$manipar['Prerelease'] = Get-Date -Format yyyyMMddHHmmss
 	$moduleversion = "$moduleversion-$($manipar['Prerelease'] )"
 }
@@ -97,10 +100,11 @@ if ((git rev-parse --abbrev-ref HEAD) -eq 'development')
 $null = Update-Changelog -ReleaseVersion $moduleversion -LinkMode None -Path "$($publishDir.FullName)\PSTranslate\changelog.md"
 $changelog = Get-ChangelogData -Path "$($publishDir.FullName)\PSTranslate\changelog.md"
 
+$manipar.ReleaseNotes = $changelog.ReleaseNotes
 Update-ModuleManifest @manipar
 
 # Publish to Gallery
 Write-Host  "Publishing the PSTranslate module to $($Repository)"
-Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository
+Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository -ReleaseNotes $changelog.ReleaseNotes
 
 #endregion Publish
