@@ -88,7 +88,7 @@ $manipar = @{
 	Path         = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
 }
 
-$branch = git rev-parse --abbrev-ref HEAD 2>$null
+$branch = git branch --show-current 2>$null
 Write-Host "Working in branch $branch"
 if ($branch -eq 'development')
 {
@@ -105,6 +105,6 @@ Update-ModuleManifest @manipar
 
 # Publish to Gallery
 Write-Host  "Publishing the PSTranslate module to $($Repository)"
-Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository -ReleaseNotes $changelog.ReleaseNotes
+Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository
 
 #endregion Publish
