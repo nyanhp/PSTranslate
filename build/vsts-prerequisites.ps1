@@ -3,7 +3,7 @@
     $Repository = 'PSGallery'
 )
 
-$modules = @("Pester", "PSScriptAnalyzer", 'PlatyPS')
+$modules = @("Pester", "PSScriptAnalyzer", 'PlatyPS', 'ChangelogManagement')
 
 # Automatically add missing dependencies
 $data = Import-PowerShellDataFile -Path "$PSScriptRoot\..\PSTranslate\PSTranslate.psd1"
