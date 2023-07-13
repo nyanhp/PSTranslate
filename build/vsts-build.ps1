@@ -85,7 +85,7 @@ if ($AutoVersion)
 	[version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1").ModuleVersion
 	$manipar = @{
 		Path          = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
-		ModuleVersion = "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)" 
+		ModuleVersion = "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
 	}
 
 	if ((git rev-parse --abbrev-ref HEAD) -eq 'development')
