@@ -49,6 +49,7 @@
     {
 
         $azureUri = 'https://api.cognitive.microsofttranslator.com/translate?api-version={0}&from={1}&to={2}' -f $ApiVersion, $From.TwoLetterISOLanguageName, $To.TwoLetterISOLanguageName
+        $providerOptions = Get-PSFConfigValue -FullName PSTranslate.Azure.Options
         $key = Get-TranslationApiKey -Provider Azure
 
         if (-not $key)
@@ -59,6 +60,11 @@
 
         $header = @{
             'Ocp-Apim-Subscription-Key' = $key
+        }
+
+        if ($providerOptions.ExtraHeader)
+        {
+            $header += $providerOptions.ExtraHeader
         }
 
 		Write-PSFMessage -String 'New-AzureTranslation.Preparing' -StringValues $From.TwoLetterISOLanguageName, $To.TwoLetterISOLanguageName, $($(-join $key[0, 1]) + $('*' * 28) + $(-join $key[-2, -1])), $azureUri

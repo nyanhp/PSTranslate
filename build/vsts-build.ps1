@@ -7,33 +7,47 @@ Insert any build steps you may need to take before publishing it here.
 param (
 	$ApiKey,
 	
-	$WorkingDirectory = $env:SYSTEM_DEFAULTWORKINGDIRECTORY
+	$WorkingDirectory,
+	
+	$Repository = 'PSGallery',
+	
+	[switch]
+	$LocalRepo,
+	
+	[switch]
+	$SkipPublish,
+	
+	[switch]
+	$AutoVersion
 )
 
+#region Handle Working Directory Defaults
+if (-not $WorkingDirectory)
+{
+	if ($env:RELEASE_PRIMARYARTIFACTSOURCEALIAS)
+	{
+		$WorkingDirectory = Join-Path -Path $env:SYSTEM_DEFAULTWORKINGDIRECTORY -ChildPath $env:RELEASE_PRIMARYARTIFACTSOURCEALIAS
+	}
+	else { $WorkingDirectory = $env:SYSTEM_DEFAULTWORKINGDIRECTORY }
+}
+if (-not $WorkingDirectory) { $WorkingDirectory = Split-Path $PSScriptRoot }
+#endregion Handle Working Directory Defaults
+
 # Prepare publish folder
-Write-PSFMessage -Level Important -Message "Creating and populating publishing directory"
-$publishDir = New-Item -Path $WorkingDirectory -Name publish -ItemType Directory
+Write-Host "Creating and populating publishing directory"
+$publishDir = New-Item -Path $WorkingDirectory -Name publish -ItemType Directory -Force
 Copy-Item -Path "$($WorkingDirectory)\PSTranslate" -Destination $publishDir.FullName -Recurse -Force
+
+# Compile help
+$helpBase = Join-Path -Path $WorkingDirectory -ChildPath docs
+foreach ($dir in ($helpBase | Get-ChildItem -Directory))
+{
+	$null = mkdir -ErrorAction SilentlyContinue -Force -Path (Join-Path -Path $publishDir -ChildPath $dir.BaseName)
+	$null = New-ExternalHelp -Path $dir.FullName -OutputPath (Join-Path -Path $publishDir -ChildPath $dir.BaseName)
+}
 
 #region Gather text data to compile
 $text = @()
-$processed = @()
-
-# Gather Stuff to run before
-foreach ($line in (Get-Content "$($PSScriptRoot)\filesBefore.txt" | Where-Object { $_ -notlike "#*" }))
-{
-	if ([string]::IsNullOrWhiteSpace($line)) { continue }
-	
-	$basePath = Join-Path "$($publishDir.FullName)\PSTranslate" $line
-	foreach ($entry in (Resolve-PSFPath -Path $basePath))
-	{
-		$item = Get-Item $entry
-		if ($item.PSIsContainer) { continue }
-		if ($item.FullName -in $processed) { continue }
-		$text += [System.IO.File]::ReadAllText($item.FullName)
-		$processed += $item.FullName
-	}
-}
 
 # Gather commands
 Get-ChildItem -Path "$($publishDir.FullName)\PSTranslate\internal\functions\" -Recurse -File -Filter "*.ps1" | ForEach-Object {
@@ -43,29 +57,53 @@ Get-ChildItem -Path "$($publishDir.FullName)\PSTranslate\functions\" -Recurse -F
 	$text += [System.IO.File]::ReadAllText($_.FullName)
 }
 
-# Gather stuff to run afterwards
-foreach ($line in (Get-Content "$($PSScriptRoot)\filesAfter.txt" | Where-Object { $_ -notlike "#*" }))
-{
-	if ([string]::IsNullOrWhiteSpace($line)) { continue }
-	
-	$basePath = Join-Path "$($publishDir.FullName)\PSTranslate" $line
-	foreach ($entry in (Resolve-PSFPath -Path $basePath))
-	{
-		$item = Get-Item $entry
-		if ($item.PSIsContainer) { continue }
-		if ($item.FullName -in $processed) { continue }
-		$text += [System.IO.File]::ReadAllText($item.FullName)
-		$processed += $item.FullName
-	}
+# Gather scripts
+Get-ChildItem -Path "$($publishDir.FullName)\PSTranslate\internal\scripts\" -Recurse -File -Filter "*.ps1" | ForEach-Object {
+	$text += [System.IO.File]::ReadAllText($_.FullName)
 }
-#endregion Gather text data to compile
 
-#region Update the psm1 file
-$fileData = Get-Content -Path "$($publishDir.FullName)\PSTranslate\PSTranslate.psm1" -Raw
-$fileData = $fileData.Replace('"<was not compiled>"', '"<was compiled>"')
-$fileData = $fileData.Replace('"<compile code into here>"', ($text -join "`n`n"))
-[System.IO.File]::WriteAllText("$($publishDir.FullName)\PSTranslate\PSTranslate.psm1", $fileData, [System.Text.Encoding]::UTF8)
-#endregion Update the psm1 file
+#region Update the psm1 file & Cleanup
+[System.IO.File]::WriteAllText("$($publishDir.FullName)\PSTranslate\PSTranslate.psm1", ($text -join "`n`n"), [System.Text.Encoding]::UTF8)
+Remove-Item -Path "$($publishDir.FullName)\PSTranslate\internal" -Recurse -Force
+Remove-Item -Path "$($publishDir.FullName)\PSTranslate\functions" -Recurse -Force
+#endregion Update the psm1 file & Cleanup
 
-# Publish to Gallery
-Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force
+#region Updating the Module Version
+if ($AutoVersion)
+{
+	Write-Host  "Updating module version numbers."
+	try { [version]$remoteVersion = (Find-Module 'PSTranslate' -Repository $Repository -ErrorAction Stop).Version }
+	catch
+	{
+		throw "Failed to access $($Repository) : $_"
+	}
+	if (-not $remoteVersion)
+	{
+		throw "Couldn't find PSTranslate on repository $($Repository) : $_"
+	}
+	$newBuildNumber = $remoteVersion.Build + 1
+	[version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1").ModuleVersion
+	$manipar = @{
+		Path = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1" 
+	}
+	Update-ModuleManifest -Path -ModuleVersion "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
+}
+#endregion Updating the Module Version
+
+#region Publish
+if ($SkipPublish) { return }
+if ($LocalRepo)
+{
+	# Dependencies must go first
+	Write-Host  "Creating Nuget Package for module: PSFramework"
+	New-PSMDModuleNugetPackage -ModulePath (Get-Module -Name PSFramework).ModuleBase -PackagePath .
+	Write-Host  "Creating Nuget Package for module: PSTranslate"
+	New-PSMDModuleNugetPackage -ModulePath "$($publishDir.FullName)\PSTranslate" -PackagePath .
+}
+else
+{
+	# Publish to Gallery
+	Write-Host  "Publishing the PSTranslate module to $($Repository)"
+	Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository
+}
+#endregion Publish
