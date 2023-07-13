@@ -1,2 +1,10 @@
 ﻿# Run internal pester tests
-& "$PSScriptRoot\..\tests\pester.ps1"
+try
+{
+    & "$PSScriptRoot\..\tests\pester.ps1"
+    exit 0
+}
+catch
+{
+    exit 1
+}

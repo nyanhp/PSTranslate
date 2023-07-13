@@ -1,4 +1,5 @@
-﻿param (
+﻿[CmdletBinding()]
+param (
 	$TestGeneral = $true,
 	
 	$TestFunctions = $true,
@@ -51,17 +52,17 @@ if ($TestGeneral)
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output
-    	$results = Invoke-Pester -Configuration $config
+		$results = Invoke-Pester -Configuration $config
 		foreach ($result in $results)
 		{
 			$totalRun += $result.TotalCount
 			$totalFailed += $result.FailedCount
 			$result.Tests | Where-Object Result -ne 'Passed' | ForEach-Object {
 				$testresults += [pscustomobject]@{
-					Block    = $_.Block
-					Name	 = "It $($_.Name)"
-					Result   = $_.Result
-					Message  = $_.ErrorRecord.DisplayErrorMessage
+					Block   = $_.Block
+					Name    = "It $($_.Name)"
+					Result  = $_.Result
+					Message = $_.ErrorRecord.DisplayErrorMessage
 				}
 			}
 		}
@@ -98,17 +99,17 @@ if ($TestFunctions)
 		$config.Run.Path = $file.FullName
 		$config.Run.PassThru = $true
 		$config.Output.Verbosity = $Output
-    	$results = Invoke-Pester -Configuration $config
+		$results = Invoke-Pester -Configuration $config
 		foreach ($result in $results)
 		{
 			$totalRun += $result.TotalCount
 			$totalFailed += $result.FailedCount
 			$result.Tests | Where-Object Result -ne 'Passed' | ForEach-Object {
 				$testresults += [pscustomobject]@{
-					Block    = $_.Block
-					Name	 = "It $($_.Name)"
-					Result   = $_.Result
-					Message  = $_.ErrorRecord.DisplayErrorMessage
+					Block   = $_.Block
+					Name    = "It $($_.Name)"
+					Result  = $_.Result
+					Message = $_.ErrorRecord.DisplayErrorMessage
 				}
 			}
 		}
