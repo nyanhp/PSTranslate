@@ -43,7 +43,7 @@ $helpBase = Join-Path -Path $WorkingDirectory -ChildPath docs
 foreach ($dir in ($helpBase | Get-ChildItem -Directory))
 {
 	$null = mkdir -ErrorAction SilentlyContinue -Force -Path (Join-Path -Path $publishDir -ChildPath $dir.BaseName)
-	$null = New-ExternalHelp -Path $dir.FullName -OutputPath (Join-Path -Path $publishDir -ChildPath $dir.BaseName)
+	$null = New-ExternalHelp -Path $dir.FullName -OutputPath (Join-Path -Path $publishDir -ChildPath "PSTranslate/$($dir.BaseName)") -Force
 }
 
 #region Gather text data to compile
@@ -84,9 +84,16 @@ if ($AutoVersion)
 	$newBuildNumber = $remoteVersion.Build + 1
 	[version]$localVersion = (Import-PowerShellDataFile -Path "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1").ModuleVersion
 	$manipar = @{
-		Path = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1" 
+		Path          = "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
+		ModuleVersion = "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)" 
 	}
-	Update-ModuleManifest -Path -ModuleVersion "$($localVersion.Major).$($localVersion.Minor).$($newBuildNumber)"
+
+	if ((git rev-parse --abbrev-ref HEAD) -eq 'development')
+	{
+		$manipar['Prerelease'] = Get-Date -Format yyyyMMddHHmmss
+	}
+
+	Update-ModuleManifest @manipar
 }
 #endregion Updating the Module Version
 
@@ -99,11 +106,20 @@ if ($LocalRepo)
 	New-PSMDModuleNugetPackage -ModulePath (Get-Module -Name PSFramework).ModuleBase -PackagePath .
 	Write-Host  "Creating Nuget Package for module: PSTranslate"
 	New-PSMDModuleNugetPackage -ModulePath "$($publishDir.FullName)\PSTranslate" -PackagePath .
+	return
 }
-else
-{
-	# Publish to Gallery
-	Write-Host  "Publishing the PSTranslate module to $($Repository)"
-	Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository
-}
+
+# Update Changelog
+$manifest = Import-PowerShellDataFile -Path "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
+$moduleversion = $manifest.ModuleVersion
+
+if ($manifest.PrivateData.PSData.Prerelease) { $moduleversion = "$moduleversion-$($manifest.PrivateData.PSData.Prerelease)" }
+$null = Update-Changelog -ReleaseVersion $moduleversion -LinkMode None -Path "$($publishDir.FullName)\PSTranslate\changelog.md"
+$changelog = Get-ChangelogData -Path "$($publishDir.FullName)\PSTranslate\changelog.md"
+Update-ModuleManifest -ReleaseNotes $changelog.Released.Where({ $_.Version -eq $changelog.LastVersion }).RawData -Path "$($publishDir.FullName)\PSTranslate\PSTranslate.psd1"
+
+# Publish to Gallery
+Write-Host  "Publishing the PSTranslate module to $($Repository)"
+Publish-Module -Path "$($publishDir.FullName)\PSTranslate" -NuGetApiKey $ApiKey -Force -Repository $Repository
+
 #endregion Publish
