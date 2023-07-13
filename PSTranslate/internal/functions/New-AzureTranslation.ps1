@@ -47,7 +47,6 @@
 
     begin
     {
-
         $azureUri = 'https://api.cognitive.microsofttranslator.com/translate?api-version={0}&from={1}&to={2}' -f $ApiVersion, $From.TwoLetterISOLanguageName, $To.TwoLetterISOLanguageName
         $providerOptions = Get-PSFConfigValue -FullName PSTranslate.Azure.Options
         $key = Get-TranslationApiKey -Provider Azure
@@ -72,29 +71,32 @@
         $requestCollector = New-Object -TypeName System.Collections.Specialized.OrderedDictionary
         $count = 0
         $requestCollector.Add($count, @())
+        $currentLength = 0
+        $charactersPerSecond = [Math]::Floor($providerOptions.CharacterLimit / $providerOptions.LimitWindow.TotalSeconds)
     }
 
     process
     {
-        if ($requestCollector[$count].Count -gt 23)
+        if ($requestCollector[$count].Count -gt 999 -or ($currentLength + $Value.Length) -ge $charactersPerSecond)
         {
             $count ++
             $requestCollector.Add($count, @())
+            $currentLength = 0
         }
 
 		Write-PSFMessage -String 'New-AzureTranslation.AddingInput' -StringValues $Value, $requestCollector[$count].Count
         $requestCollector[$count] += @{ Text = $Value }
+        $currentLength += $Value.Length
     }
 
     end
 	{
-		Write-PSFMessage -String 'New-AzureTranslation.ExecutingBatches' -StringValues $requestCollector.Count
+		Write-PSFMessage -String 'New-AzureTranslation.ExecutingBatches' -StringValues $requestCollector.Count, $charactersPerSecond
         foreach ($entry in $requestCollector.GetEnumerator())
         {
 			$jsonBody = ConvertTo-Json -InputObject $entry.Value
-			Write-PSFMessage -Level Debug -String 'New-AzureTranslation.ExecutionBody' -StringValues $jsonBody
             $(Invoke-RestMethod -Method Post -Uri $azureUri -Body $jsonBody -Headers $header -ContentType application/json).translations.text
+            [Threading.Thread]::Sleep(1000) # Having calculated chars/second, we can just wait a second
         }
     }
-
 }

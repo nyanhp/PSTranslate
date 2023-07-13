@@ -79,7 +79,6 @@
     {
         Write-PSFMessage -String 'New-GoogleTranslation.ExecutingBatches' -StringValues $body.q.Count
         $jsonBody = ConvertTo-Json -InputObject $body
-        Write-PSFMessage -Level Debug -String 'New-GoogleTranslation.ExecutionBody' -StringValues ($header | Out-String),$jsonBody
         (Invoke-RestMethod -Method Post -Uri $googleUri -Headers $header -Body $jsonBody -UseBasicParsing -ContentType 'application/json; charset=utf-8').Content
     }
 }

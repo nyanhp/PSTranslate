@@ -12,9 +12,12 @@
     The query parameters to add.
 .PARAMETER ExtraPostBody
     The extra body content to add to a post if post is used.
-
 .PARAMETER Register
     Persist the provider options, so they will be remembered in future sessions.
+.PARAMETER CharacterLimit
+    How many characters per defined Window will be sent to the API
+.PARAMETER LimitWindow
+    What Window is used?
 .EXAMPLE
     Set-TranslationProviderOption -Provider Azure -ExtraHeader @{'Ocp-Apim-Subscription-Region' = 'westeurope'} -Register
 
@@ -40,6 +43,12 @@ function Set-TranslationProviderOption
         [hashtable]
         $ExtraPostBody,
 
+        [uint64]
+        $CharacterLimit = 33000, # Using Azure defaults...
+
+        [timespan]
+        $LimitWindow = '00:01:00',
+
         [switch]
         $Register
     )
@@ -48,6 +57,8 @@ function Set-TranslationProviderOption
         ExtraHeader         = $ExtraHeader
         ExtraQueryParameter = $ExtraQueryParameter
         ExtraPostBody       = $ExtraPostBody
+        CharacterLimit      = $CharacterLimit
+        LimitWindow         = $LimitWindow
     } -PassThru
 
     if (-not $Register.IsPresent) { return }
