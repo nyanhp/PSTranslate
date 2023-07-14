@@ -1,6 +1,6 @@
 ﻿function Add-TranslationApiKey
 {
-<#
+	<#
 	.SYNOPSIS
 		Stores API Keys for the APIs used to translate text.
 
@@ -27,19 +27,19 @@
 		Adds an API key to connect to azure with.
 #>
 	[Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
-    [CmdletBinding()]
-    param
-    (
-        [Parameter(Mandatory = $true)]
-        [string]
-        $ApiKey,
+	[CmdletBinding()]
+	param
+	(
+		[Parameter(Mandatory = $true)]
+		[string]
+		$ApiKey,
 
 		[Parameter(Mandatory = $true)]
 		[PsfValidateSet(TabCompletion = 'PSTranslate.Provider')]
-        [string]
-        $Provider,
+		[string]
+		$Provider,
 
-        [switch]
+		[switch]
 		$Force,
 
 		[switch]
@@ -58,23 +58,22 @@
 					Write-PSFMessage -Level Warning -String 'Add-TranslationApiKey.ApiKey.Present' -StringValues $Provider
 					return
 				}
-				if (Test-PSFPowerShell -OperatingSystem Windows)
+
+				$value = if (Test-PSFPowerShell -OperatingSystem Windows)
 				{
 					$secureKey = $ApiKey | ConvertTo-SecureString -AsPlainText -Force
 					$cred = New-Object PSCredential($Provider, $secureKey)
-					Set-PSFConfig -Module PSTranslate -Name Azure.ApiKey -Value $cred
+					Set-PSFConfig -Module PSTranslate -Name Azure.ApiKey -Value $cred -PassThru
 				}
-				else { Set-PSFConfig -Module PSTranslate -Name Azure.ApiKey -Value $ApiKey }
+				else
+				{ 
+					Set-PSFConfig -Module PSTranslate -Name Azure.ApiKey -Value $ApiKey -PassThru
+				}
 
 				if ($Register)
 				{
-					Register-PSFConfig -Module PSTranslate -Name Azure.ApiKey
+					$value | Register-PSFConfig
 				}
-				break
-			}
-			default
-			{
-				Write-PSFMessage -Level Warning -String 'Add-TranslationApiKey.BadProvider' -StringValues $Provider
 			}
 		}
 	}
