@@ -1,67 +1,131 @@
-$modulePath = Resolve-Path -Path "$PSScriptRoot\..\..\PSTranslate.psd1" -ErrorAction Stop
-
-Remove-Module PSTranslate -Force
-Import-Module -Name $modulePath.Path, PSFramework -Force
-
-InModuleScope -ModuleName PSTranslate {
-    Describe 'Testing Get-Translation' {
-        $testData = @{
+BeforeDiscovery {
+    [hashtable[]]$testDataDefault = @(
+        @{
+            From     = 'en-us'
+            To       = 'de-de'
+            Value    = 'Pester is the best-er'
+            Provider = 'Azure'
+        }
+        @{
             From     = 'en-us'
             To       = 'de-de'
             Value    = 'PowerShell is awesome', 'JHP is the best', 'Friedrich is a god'
             Provider = 'Azure'
         }
+    )
+    [hashtable[]]$testDataWrongProvider = @(
+        @{
+            From     = 'en-us'
+            To       = 'de-de'
+            Value    = 'PowerShell is awesome', 'JHP is the best', 'Friedrich is a god'
+            Provider = 'GibbetNich'
+        }
+    )
+    [hashtable[]]$testDataWrongCulture = @(
+        @{
+            From     = 'klingon'
+            To       = 'elvish'
+            Value    = 'PowerShell is awesome', 'JHP is the best', 'Friedrich is a god'
+            Provider = 'Azure'
+        }
+    )
 
-        Context 'API key present' {
+    [hashtable[]]$testDataNoProvider = @(
+        @{
+            From  = 'en-us'
+            To    = 'de-de'
+            Value = 'PowerShell is awesome', 'JHP is the best', 'Friedrich is a god'
+        }
+    )
+}
 
-            $result = 'PowerShell ist irre', 'JHP ist der beste', 'Friedrich ist ein Gott'
-            $script:counter = 0
-            Mock -CommandName New-AzureTranslation -MockWith { $result[$script:counter]; $script:counter++ }
-
-            It 'Should return a translation' {
-                Get-Translation @testData | Should -Be $result
-            }
-
-            It "Should call New-$($testData.Provider)Translation exactly $($testData.Value.Count) times" {
-                Assert-MockCalled -CommandName New-AzureTranslation -Exactly -Times $testData.Value.Count
-            }
+Describe 'Testing Get-Translation' {
+    Context 'API key present' {
+        BeforeEach {
+            Mock -CommandName New-AzureTranslation -MockWith { $Value } -ModuleName PSTranslate
+            Mock -CommandName Write-PSFMessage -ModuleName PSTranslate
         }
 
-        Context 'API key present, no provider given' {
-            $thisTest = $testData.Clone()
-            $thisTest.remove('Provider')
-            $result = 'PowerShell ist irre', 'JHP ist der beste', 'Friedrich ist ein Gott'
-            $script:counter = 0
-            Mock -CommandName New-AzureTranslation -MockWith { $result[$script:counter]; $script:counter++ }
-            Mock -CommandName Get-PSFConfigValue -MockWith { 'Azure' }
-
-            It 'Should return a translation' {
-                Get-Translation @thisTest | Should -Be $result
-            }
-
-            It "Should call New-AzureTranslation exactly $($testData.Value.Count) times" {
-                Assert-MockCalled -CommandName New-AzureTranslation -Exactly -Times $testData.Value.Count
-            }
-
-            It 'Should call Get-PSFConfigValue exactly once' {
-                Assert-MockCalled -CommandName Get-PSFConfigValue -Exactly -Times 1
-            }
+        It 'Provider <Provider> should return a translation from <From> to <To>' -ForEach $testDataDefault {
+            param
+            (
+                $From,
+                $To,
+                $Value,
+                $Provider
+            )
+            Get-Translation @PSBoundParameters | Should -Be $Value
         }
 
-        Context 'No API key present' {
-            Mock -CommandName New-AzureTranslation -MockWith { throw 'No API key :(' }
+        It "Should call New-<Provider>Translation" -ForEach $testDataDefault {
+            param
+            (
+                $From,
+                $To,
+                $Value,
+                $Provider
+            )
+            $null = Get-Translation @PSBoundParameters
+            Assert-MockCalled -CommandName New-AzureTranslation -Exactly -Times $Value.Count -ModuleName PSTranslate
+        }
+    }
 
-            It 'Should throw' {
-                { Get-Translation @testData } | Should -Throw
-            }
+    Context 'API key present, no provider given' {
+        BeforeEach {
+            Mock -CommandName New-AzureTranslation -MockWith { $Value } -ModuleName PSTranslate
+            Mock -CommandName Get-PSFConfigValue -MockWith { 'Azure' } -ModuleName PSTranslate
+            Mock -CommandName Write-PSFMessage -ModuleName PSTranslate
         }
 
-        Context 'Unkown provider' {
-            $testData.Provider = 'ComputerSayNooooo'
+        It 'Should call Get-PSFConfigValue exactly once'  -ForEach $testDataNoProvider {
+            param
+            (
+                $From,
+                $To,
+                $Value
+            )
+            Get-Translation @PSBoundParameters | Should -Be $Value
+            Assert-MockCalled -CommandName Get-PSFConfigValue -Exactly -Times 1 -ModuleName PSTranslate
+        }
+    }
 
-            It 'should throw' {
-                {Get-Translation @testData} | Should -Throw
+    Context 'No API key present' {
+        BeforeEach {
+            Mock -CommandName New-AzureTranslation -MockWith { throw 'No API key :(' } -ModuleName PSTranslate
+            Mock -CommandName Write-PSFMessage -ModuleName PSTranslate
+        }
+
+        It 'Should throw' -ForEach $testDataDefault {
+            param
+            (
+                $From,
+                $To,
+                $Value,
+                $Provider
+            )
+            { Get-Translation -From $From -To $To -Value $Value -Provider $Provider -ErrorAction Stop } | Should -Throw
+        }
+    }
+
+    Context 'Unkown provider' {
+        BeforeEach {
+            Mock -CommandName Write-PSFMessage -ModuleName PSTranslate
+        }
+
+        It '<Provider> should throw' -ForEach $testDataWrongProvider {
+            param
+            (
+                $From,
+                $To,
+                $Value,
+                $Provider
+            )
+            if (-not (Get-Command -Name "New-$($Provider)Translation" -ErrorAction SilentlyContinue))
+            {
+                $null = New-Item -Path "function:\New-$($Provider)Translation" -Value {}
             }
+            Mock -CommandName "New-$($Provider)Translation"
+            { Get-Translation -From $From -To $To -Value $Value -Provider $Provider -ErrorAction Stop }  | Should -Throw
         }
     }
 }

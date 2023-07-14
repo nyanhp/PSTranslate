@@ -67,7 +67,6 @@
         switch ($Provider)
         {
             'Azure' { $pipeCollection | New-AzureTranslation -From $From -To $To }
-			default { Write-PSFMessage -Level Warning -String 'Get-Translation.BadProvider' -StringValues $Provider }
 		}
 	}
 }
