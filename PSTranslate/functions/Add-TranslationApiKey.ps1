@@ -66,7 +66,7 @@
 					Set-PSFConfig -Module PSTranslate -Name Azure.ApiKey -Value $cred -PassThru
 				}
 				else
-				{ 
+				{
 					Set-PSFConfig -Module PSTranslate -Name Azure.ApiKey -Value $ApiKey -PassThru
 				}
 
