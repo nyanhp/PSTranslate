@@ -1,58 +1,81 @@
-$modulePath = Resolve-Path -Path "$PSScriptRoot\..\..\PSTranslate.psd1" -ErrorAction Stop
+BeforeDiscovery {
+    $testCaseDefault = @(
+        @{
+            ApiKey   = 'My Key! My beautiful key!'
+            Provider = 'Azure'
+        }
+    )
+    $testCaseInvalidProvider = @(
+        @{
+            ApiKey   = 'My Key! My beautiful key!'
+            Provider = 'Nice try'
+        }
+    )
+}
 
-Remove-Module PSTranslate -Force
-Import-Module -Name $modulePath.Path, PSFramework -Force
+Describe 'Get-TranslationApiKey' {
 
-InModuleScope -ModuleName PSTranslate {
-    Describe 'Get-TranslationApiKey' {
-        $apiKey = 'My Key! My beautiful key!'
-        $provider = 'Azure'
-        $invalidProvider = 'Nice try'
-
-        Context 'Windows API key exists' {
-            Mock -CommandName Get-PSFConfigValue -MockWith { [pscredential]::new('bla', ($apiKey | ConvertTo-SecureString -AsPlainText -Force)) }
-            Mock -CommandName Test-PSFPowerShell -MockWith { $true }
-
-            It 'Should get an API key' {
-                Get-TranslationApiKey -Provider $provider | Should -Be $apiKey
-            }
-
-            It 'Should call the mocks' {
-                Assert-MockCalled -CommandName Get-PSFConfigValue
-                Assert-MockCalled -CommandName Test-PSFPowerShell
-            }
+    Context 'Windows API key exists' {
+        BeforeEach {
+            Mock -CommandName Get-PSFConfigValue -MockWith { [pscredential]::new('bla', ($apiKey | ConvertTo-SecureString -AsPlainText -Force)) } -ModuleName PSTranslate
+            Mock -CommandName Test-PSFPowerShell -MockWith { $true } -ModuleName PSTranslate
         }
 
-        Context 'Non-Windows API key exists' {
-            Mock -CommandName Get-PSFConfigValue -MockWith { $apiKey }
-            Mock -CommandName Test-PSFPowerShell -MockWith { $false }
+        It '<Provider> Should get an API key' -ForEach $testCaseDefault {
+            param
+            (
+                $Provider,
+                $ApiKey
+            )
+            Get-TranslationApiKey -Provider $provider | Should -Be $apiKey
+            Assert-MockCalled -CommandName Get-PSFConfigValue -ModuleName PSTranslate
+            Assert-MockCalled -CommandName Test-PSFPowerShell -ModuleName PSTranslate
+        }
+    }
 
-            It 'Should get an API key' {
-                Get-TranslationApiKey -Provider $provider | Should -Be $apiKey
-            }
-
-            It 'Should call the mocks' {
-                Assert-MockCalled -CommandName Get-PSFConfigValue
-                Assert-MockCalled -CommandName Test-PSFPowerShell
-            }
+    Context 'Non-Windows API key exists' {
+        BeforeEach {
+            Mock -CommandName Get-PSFConfigValue -MockWith { $apiKey } -ModuleName PSTranslate
+            Mock -CommandName Test-PSFPowerShell -MockWith { $false } -ModuleName PSTranslate
         }
 
-        Context 'API key missing' {
-            Mock -CommandName Get-PSFConfigValue
+        It '<Provider> Should get an API key' -ForEach $testCaseDefault {
+            param
+            (
+                $Provider,
+                $ApiKey
+            )
+            Get-TranslationApiKey -Provider $provider | Should -Be $apiKey
+            Assert-MockCalled -CommandName Get-PSFConfigValue -ModuleName PSTranslate
+            Assert-MockCalled -CommandName Test-PSFPowerShell -ModuleName PSTranslate
+        }
+    }
 
-            It 'Should get zilch' {
-                Get-TranslationApiKey -Provider $provider | Should -Be $null
-            }
-
-            It 'Should call the mocks' {
-                Assert-MockCalled -CommandName Get-PSFConfigValue
-            }
+    Context 'API key missing' {
+        BeforeEach {
+            Mock -CommandName Get-PSFConfigValue -ModuleName PSTranslate
         }
 
-        Context 'Invalid provider' {
-            It 'Should throw' {
-                { Get-TranslationApiKey -Provider $invalidProvider } | Should -Throw
-            }
+        It '<Provider> Should get zilch' -ForEach $testCaseDefault {
+            param
+            (
+                $Provider,
+                $ApiKey
+            )
+            Get-TranslationApiKey -Provider $provider | Should -Be $null
+            Assert-MockCalled -CommandName Get-PSFConfigValue -ModuleName PSTranslate
+        }
+    }
+
+    Context 'Invalid provider' {
+        It '<Provider> Should throw' -ForEach $testCaseInvalidProvider {
+            param
+            (
+                $Provider,
+                $ApiKey
+            )
+            { Get-TranslationApiKey -Provider $invalidProvider } | Should -Throw
         }
     }
 }
+    

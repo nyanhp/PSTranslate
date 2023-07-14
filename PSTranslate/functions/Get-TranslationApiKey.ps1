@@ -38,10 +38,6 @@
 				}
 				break
 			}
-			default
-			{
-				Write-PSFMessage -Level Warning -String 'Get-TranslationApiKey.BadProvider' -StringValues $Provider
-			}
 		}
 	}
 }
