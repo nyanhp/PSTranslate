@@ -1,5 +1,5 @@
 ﻿Register-PSFTeppScriptblock -Name "PSTranslate.Provider" -ScriptBlock {
-	'Azure'
+	'Azure', 'Google'
 }
 
 Register-PSFTeppScriptblock -Name 'PSTranslate.Culture' -ScriptBlock {

@@ -23,3 +23,10 @@ if (Test-PSFPowerShell -OperatingSystem Windows)
 	Set-PSFConfig -Module 'PSTranslate' -Name 'Azure.ApiKey' -Value $null -Initialize -Validation credential -Description 'The API key used to connect to the Azure Cognitive Translation Services'
 }
 else { Set-PSFConfig -Module 'PSTranslate' -Name 'Azure.ApiKey' -Value $null -Initialize -Validation string -Description 'The API key used to connect to the Azure Cognitive Translation Services' }
+
+# Google Translation API
+if (Test-PSFPowerShell -OperatingSystem Windows)
+{
+	Set-PSFConfig -Module 'PSTranslate' -Name 'Google.ApiKey' -Value $null -Initialize -Validation credential -Description 'The API key used to connect to the Azure Cognitive Translation Services'
+}
+else { Set-PSFConfig -Module 'PSTranslate' -Name 'Google.ApiKey' -Value $null -Initialize -Validation string -Description 'The API key used to connect to the Azure Cognitive Translation Services' }
