@@ -1,4 +1,6 @@
-﻿# PSTranslate
+>This repo has moved to <https://codeberg.org/nyanhp/pstranslate>
+ 
+ # PSTranslate
 
 A little module to get translations from cloud service like the Azure Cognitive Services.
 
